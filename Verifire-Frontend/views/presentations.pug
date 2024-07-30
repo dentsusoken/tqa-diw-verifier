@@ -1,0 +1,16 @@
+extends layout
+block content
+  body
+    .container
+      .header
+        h2 Shared Authentication details
+        .qr-section
+          if responseJsonString 
+            p Response from the server: 
+            p.response-content #{responseJsonString}
+          else
+            p No response from the server
+        .footer
+            a.button(onclick="window.history.back()") BACK
+                
+

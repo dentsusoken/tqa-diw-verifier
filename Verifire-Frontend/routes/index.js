@@ -74,3 +74,23 @@ router.get('/initiate', function(retiq, res, next){
     console.log('error:',error);
   });
 });
+
+// GET Get wallet response passing response_code
+router.get('/get-wallet-code', function(req, res, next) {
+  // response_codeをログに出力
+  console.log(req.query);
+  axios.get('https://verifier-backend.eudiw.dev/ui/presentations/'+presentationId+'?response_code='+req.query.response_code) 
+  .then(response => {
+    console.log('response:',response.data);
+
+  // response.dataをJSON文字列に変換
+    const responseJsonString = JSON.stringify(response.data,null,2);
+  // VP提示結果を渡す
+    res.render('presentations', {responseJsonString: responseJsonString});
+  })
+  .catch(error => {
+    console.log('error:',error);
+  });
+});
+
+module.exports = router;
