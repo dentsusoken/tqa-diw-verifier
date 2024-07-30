@@ -1,0 +1,16 @@
+doctype html
+html
+  head
+    title QR Code
+    link(rel="stylesheet", href="/stylesheets/style.css")
+  body
+    .container
+      .header
+        h2 Proceed to authentication
+      .qr-section
+        p Scan the QR code with your phone's camera app
+        img.qr-code(src=qrCodeDataURL)
+        p - OR -
+        a.button(href=url) AUTHENTICATE WITH WALLET
+      .footer
+        a.button(onclick="window.history.back()") BACK
