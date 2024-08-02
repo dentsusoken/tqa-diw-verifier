@@ -1,17 +1,23 @@
 {
-  "name": "express-verifire-frontend",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "verifire-frontend",
+  "version": "0.0.0",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ./bin/www",
+    "devstart": "nodemon ./bin/www",
+    "serverstart": "DEBUG=Verifire-Frontend:* npm run devstart"
   },
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "express": "^4.19.2"
+    "axios": "^1.7.2",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "express": "^4.19.2",
+    "http-errors": "~1.6.3",
+    "morgan": "~1.9.1",
+    "pug": "^3.0.3",
+    "qrcode": "^1.5.3"
   },
   "devDependencies": {
-    "eslint": "^9.7.0"
+    "nodemon": "^3.1.4"
   }
 }
