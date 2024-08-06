@@ -2,7 +2,8 @@ var express = require('express');
 var router = express.Router();
 var axios = require('axios');
 var QRcode = require('qrcode');
-
+const base64url = require('base64url');
+const cbor = require('cbor');
 
 // GET トップ画面：VP要求ボタンを表示
 router.get('/', function(req, res, next) {
@@ -28,10 +29,18 @@ router.get('/initiate', function(retiq, res, next){
             },
             constraints:{
                 fields:[
-                    {
-                        path:["$['eu.europa.ec.eudi.pid.1']['family_name']"],
-                        intent_to_retain: true
-                    }
+                  {
+                    "path": [
+                      "$['eu.europa.ec.eudi.pid.1']['family_name']"
+                    ],
+                    "intent_to_retain": false
+                  },
+                  {
+                    "path": [
+                      "$['eu.europa.ec.eudi.pid.1']['given_name']"
+                    ],
+                    "intent_to_retain": false
+                  },
                 ]
             }
         }
@@ -80,17 +89,44 @@ router.get('/get-wallet-code', function(req, res, next) {
   // response_codeをログに出力
   console.log(req.query);
   axios.get('https://verifier-backend.eudiw.dev/ui/presentations/'+presentationId+'?response_code='+req.query.response_code) 
-  .then(response => {
-    console.log('response:',response.data);
+  .then(async response => { // asyncを追加
 
-  // response.dataをJSON文字列に変換
-    const responseJsonString = JSON.stringify(response.data,null,2);
-  // VP提示結果を渡す
-    res.render('presentations', {responseJsonString: responseJsonString});
-  })
-  .catch(error => {
-    console.log('error:',error);
-  });
+    const vpToken = response.data.vp_token;
+    let presentedClaims = [];
+
+    // ステップ1: Base64URLデコード
+    const decodedVpToken = base64url.toBuffer(vpToken);
+
+    // cbor.decodeFirstをPromiseにラップする関数
+    const decodeFirstPromise = (data) => new Promise((resolve, reject) => {
+        cbor.decodeFirst(data, (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+        });
+    });
+
+    // ステップ2: CBORデコード (async/awaitを使用)
+    try {
+        const obj = await decodeFirstPromise(decodedVpToken);
+        for (const document of obj.documents) {
+            const taggedArray = document.issuerSigned.nameSpaces['eu.europa.ec.eudi.pid.1'];
+            for (const tagged of taggedArray) {
+                const decodedObj = await decodeFirstPromise(tagged.value);
+                const elementValue = decodedObj.elementValue;
+                const elementIdentifier = decodedObj.elementIdentifier;
+                presentedClaims.push({claim: elementValue, id: elementIdentifier});
+            }
+        }
+        console.log(presentedClaims);
+        // VP提示結果を渡す
+        res.render('presentations', {response : presentedClaims});
+    } catch (error) {
+        console.error('CBORデコード中にエラーが発生しました:', error);
+    }
+})
+.catch(error => {
+    console.error('エラーが発生しました:', error);
+});
 });
 
 module.exports = router;

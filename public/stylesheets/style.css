@@ -34,7 +34,7 @@ body {
   border: 1px solid #ccc;
   padding: 10px;
   margin: 10px 0;
-  height: 1000px; 
+  /* height: 1000px;  */
   overflow: auto; 
   white-space: pre-wrap; 
   word-break: break-all; /* テキストの折り返しを強制的に有効にする */
