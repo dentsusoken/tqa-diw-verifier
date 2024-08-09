@@ -5,9 +5,11 @@ block content
       .header
         h2 Shared Authentication details
         .qr-section
-          if responseJsonString 
+          if response
             p Response from the server: 
-            p.response-content #{responseJsonString}
+              ul.response-content
+                each res in response
+                    li #{res.id} : #{res.claim}
           else
             p No response from the server
         .footer
