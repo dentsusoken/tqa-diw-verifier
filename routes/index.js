@@ -4,6 +4,11 @@ var axios = require('axios');
 var QRcode = require('qrcode');
 const base64url = require('base64url');
 const cbor = require('cbor');
+const {v4:uuid} = require('uuid');
+const VERIFIER_FRONTEND_URL = 'http://localhost:3000';
+const WALLET_RESPONSE_PATH = "/get-wallet-code";
+const VERIFIER_ENDPONT_URL = "https://verifier-backend.eudiw.dev/ui/presentations/";
+const CUSTOM_URL_SCHEME = "openid4vp://";
 
 // デバイスの種類を判別する関数
 function getDeviceType(req) {
@@ -21,6 +26,7 @@ router.get('/', function(req, res, next) {
   // デバイス判別
   const deviceType = getDeviceType(req);
   console.log('deviceType:', deviceType);
+  res.locals.verifier_frontend_url = VERIFIER_FRONTEND_URL;
   res.render('index');
 });
 
@@ -61,11 +67,11 @@ router.get('/initiate', function(req, res, next){
         }
         ]
     },
-    nonce: "9b1271e7-f85b-43cd-8a66-2bfdaee1eeb2"
+    nonce: uuid()
   }
   // deviceTypeがMobile（=Same Device）の場合にwallet_response_redirect_uri_templateを追加
   if (deviceType === 'Mobile') {
-    date.wallet_response_redirect_uri_template = "http://localhost:3000/get-wallet-code?response_code={RESPONSE_CODE}";
+    date.wallet_response_redirect_uri_template = VERIFIER_FRONTEND_URL + WALLET_RESPONSE_PATH + "?response_code={RESPONSE_CODE}";
     console.log('【ADD】wallet_response_redirect_uri_template:',date);
   }
 
@@ -84,8 +90,8 @@ router.get('/initiate', function(req, res, next){
     const encodedURI = encodeURIComponent(requestUri);
     console.log('encodedURI:',encodedURI);
 
-    // eudi-openid4vp~のURLを生成
-    const url = "eudi-openid4vp://verifier-backend.eudiw.dev?client_id=verifier-backend.eudiw.dev&request_uri=" + encodedURI;
+    // openid4vp~のURLを生成
+    const url = CUSTOM_URL_SCHEME+"verifier-backend.eudiw.dev?client_id=verifier-backend.eudiw.dev&request_uri=" + encodedURI;
     console.log('url:',url);
 
     if (deviceType === 'Desktop') {
@@ -123,7 +129,7 @@ router.get('/poll', function(req, res, next) {
     return res.status(400).json({ error: 'presentationId is not found' });
   }
 
-  axios.get('https://verifier-backend.eudiw.dev/ui/presentations/'+presentationId)
+  axios.get(VERIFIER_ENDPONT_URL+presentationId)
   .then(async response => { // asyncを追加
 
     const vpToken = response.data.vp_token;
@@ -173,10 +179,10 @@ router.get('/presentations', function(req, res, next) {
 });
 
 // GET Get wallet response passing response_code
-router.get('/get-wallet-code', function(req, res, next) {
+router.get(WALLET_RESPONSE_PATH, function(req, res, next) {
   // response_codeをログに出力
   console.log(req.query);
-  axios.get('https://verifier-backend.eudiw.dev/ui/presentations/'+presentationId+'?response_code='+req.query.response_code) 
+  axios.get(VERIFIER_ENDPONT_URL+presentationId+'?response_code='+req.query.response_code) 
   .then(async response => { // asyncを追加
 
     const vpToken = response.data.vp_token;
