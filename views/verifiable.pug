@@ -8,9 +8,47 @@ html
       .header
         h2 Proceed to authentication
       .qr-section
-        p Scan the QR code with your phone's camera app
-        img.qr-code(src=qrCodeDataURL)
-        p - OR -
-        a.button(href=url) AUTHENTICATE WITH WALLET
+        if deviceType === 'Desktop'
+          p Scan the QR code with your phone's camera app
+          img.qr-code(src=qrCodeDataURL)
+          p - OR -
+          a.button(href=url) AUTHENTICATE WITH WALLET
+        else
+          p Please use the link below to authenticate with your wallet.
+          a.button(href=url) AUTHENTICATE WITH WALLET
       .footer
         a.button(onclick="window.history.back()") BACK
+
+    script.
+      const deviceType = !{JSON.stringify(deviceType)};                                  // デバイスタイプを取得
+      const presentationId = !{JSON.stringify(presentationId)};                          // プレゼンテーションIDを取得
+
+      // デバイスタイプがデスクトップの場合、ポーリング処理を実行
+      if (deviceType === 'Desktop') {
+        let pollCount = 0;                                                               // ポーリング回数をカウントする変数
+        const maxPolls = 60;                                                             // ポーリング回数の上限
+
+        // サーバーにポーリングリクエストを行う
+        function pollServer() {
+          if (pollCount < maxPolls) {
+            const url = `/poll?presentationId=${presentationId}`;                        // ポーリング用のエンドポイントを作成
+            fetch(url)                                                                   // ポーリング用のエンドポイントを呼び出す
+              .then(response => response.json())
+              .then(data => {                                                            // /pollエンドポイントからのレスポンスを処理
+                console.log('Polling result:', data);
+                if (data.result) {
+                  console.log('Polling Successful');
+                  document.querySelector('.qr-code').style.display = 'none';             // QRコードを非表示にする
+                  window.location.href = '/presentations';                               // /presentationsエンドポイントにリダイレクト
+                } else {
+                  pollCount++;                                                           // ポーリング回数をカウントアップ
+                  setTimeout(pollServer, 2000);
+                }
+              });
+          } else {                                                                       // ポーリング回数が上限に達した場合
+            document.querySelector('.qr-code').style.display = 'none';                   // QRコードを非表示にする
+            document.querySelector('.qr-section').innerHTML += '<p>Verification failed. Please try again.</p>';
+          }
+        }
+        pollServer();
+      }

@@ -5,14 +5,29 @@ var QRcode = require('qrcode');
 const base64url = require('base64url');
 const cbor = require('cbor');
 
+// デバイスの種類を判別する関数
+function getDeviceType(req) {
+  const userAgent = req.headers['user-agent'].toLowerCase();
+  if (/(android.+mobile|blackberry|iphone|ipod|opera mini|iemobile)/i.test(userAgent)) {
+    return 'Mobile';
+  } else if (/(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk|(puffin(?!.*(ip|ap|wp))))/i.test(userAgent)) {
+    return 'Tablet';
+  } else {
+    return 'Desktop';
+  }
+}
 // GET トップ画面：VP要求ボタンを表示
 router.get('/', function(req, res, next) {
+  // デバイス判別
+  const deviceType = getDeviceType(req);
+  console.log('deviceType:', deviceType);
   res.render('index');
 });
 
 // GET /initiate：VP要求ボタンを押下後
-router.get('/initiate', function(retiq, res, next){
-
+router.get('/initiate', function(req, res, next){
+  const deviceType = getDeviceType(req);
+  console.log('deviceType:', deviceType);
   const date = {
     type: "vp_token",
     presentation_definition: {
@@ -46,8 +61,12 @@ router.get('/initiate', function(retiq, res, next){
         }
         ]
     },
-    nonce: "9b1271e7-f85b-43cd-8a66-2bfdaee1eeb2",
-    wallet_response_redirect_uri_template: "http://localhost:3000/get-wallet-code?response_code={RESPONSE_CODE}"
+    nonce: "9b1271e7-f85b-43cd-8a66-2bfdaee1eeb2"
+  }
+  // deviceTypeがMobile（=Same Device）の場合にwallet_response_redirect_uri_templateを追加
+  if (deviceType === 'Mobile') {
+    date.wallet_response_redirect_uri_template = "http://localhost:3000/get-wallet-code?response_code={RESPONSE_CODE}";
+    console.log('【ADD】wallet_response_redirect_uri_template:',date);
   }
 
   axios.post('https://verifier-backend.eudiw.dev/ui/presentations', date)
@@ -69,19 +88,88 @@ router.get('/initiate', function(retiq, res, next){
     const url = "eudi-openid4vp://verifier-backend.eudiw.dev?client_id=verifier-backend.eudiw.dev&request_uri=" + encodedURI;
     console.log('url:',url);
 
-    // verifiable画面のQRコードを生成する
-    QRcode.toDataURL(url, function(err, qrCodeDataURL){ // QRコードを生成後、コールバック関数を実行
-      if(err){
-        console.log('error:',err);
-      }
-      console.log('qrCodeDataURL:',qrCodeDataURL);
-    // リンクとQRコードを渡す
-      res.render('verifiable', {qrCodeDataURL: qrCodeDataURL, url: url});
-    });
+    if (deviceType === 'Desktop') {
+      // verifiable画面のQRコードを生成する
+      QRcode.toDataURL(url, function(err, qrCodeDataURL){ // QRコードを生成後、コールバック関数を実行
+        if(err){
+          console.log('error:',err);
+        }
+        console.log('qrCodeDataURL:',qrCodeDataURL);
+        // リンクとQRコードを渡す
+        res.render('verifiable', {
+        qrCodeDataURL: qrCodeDataURL,
+        url: url,
+        deviceType: deviceType,
+        presentationId: presentationId
+        });
+      });
+    } else {
+      // Mobileの場合はQRコードを表示せず、リンクを返す
+      res.render('verifiable', {
+      url: url,
+      deviceType: deviceType,
+      presentationId: presentationId
+      });
+    }
   })
   .catch(error => {
     console.log('error:',error);
   });
+});
+
+// GET /poll：VP提示結果を取得
+router.get('/poll', function(req, res, next) {
+  if (!presentationId){
+    return res.status(400).json({ error: 'presentationId is not found' });
+  }
+
+  axios.get('https://verifier-backend.eudiw.dev/ui/presentations/'+presentationId)
+  .then(async response => { // asyncを追加
+
+    const vpToken = response.data.vp_token;
+    let presentedClaims = [];
+
+    // ステップ1: Base64URLデコード
+    const decodedVpToken = base64url.toBuffer(vpToken);
+
+    // cbor.decodeFirstをPromiseにラップする関数
+    const decodeFirstPromise = (data) => new Promise((resolve, reject) => {
+        cbor.decodeFirst(data, (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+        });
+    });
+
+    // ステップ2: CBORデコード (async/awaitを使用)
+    try {
+        const obj = await decodeFirstPromise(decodedVpToken);
+        for (const document of obj.documents) {
+            const taggedArray = document.issuerSigned.nameSpaces['eu.europa.ec.eudi.pid.1'];
+            for (const tagged of taggedArray) {
+                const decodedObj = await decodeFirstPromise(tagged.value);
+                const elementValue = decodedObj.elementValue;
+                const elementIdentifier = decodedObj.elementIdentifier;
+                presentedClaims.push({claim: elementValue, id: elementIdentifier});
+            }
+        }
+        // VP提示結果をセッションに保存
+        req.session.presentedClaims = presentedClaims;
+        console.log('presentedClaims',req.session.presentedClaims);
+        return res.json({ result: true });
+    } catch (error) {
+        console.error('CBORデコード中にエラーが発生しました:', error);
+    }
+  })
+  .catch(error => {
+    console.log('error:',error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  });
+});
+
+// GET /presentations：VP提示結果を表示
+router.get('/presentations', function(req, res, next) {
+  const presentedClaims = req.session.presentedClaims;
+  res.render('presentations',{response : presentedClaims});
 });
 
 // GET Get wallet response passing response_code
