@@ -8,7 +8,7 @@ const { v4: uuid } = require("uuid");
 const VERIFIER_FRONTEND_URL = "http://localhost:3000";
 const WALLET_RESPONSE_PATH = "/get-wallet-code";
 const VERIFIER_ENDPONT_URL =
-  "https://verifier-backend.eudiw.dev/ui/presentations/";
+  "https://verifier-backend.eudiw.dev/ui/presentations";
 const CUSTOM_URL_SCHEME = "openid4vp://";
 
 // デバイスの種類を判別する関数
@@ -85,7 +85,7 @@ router.get("/initiate", (req, res) => {
   }
 
   axios
-    .post("https://verifier-backend.eudiw.dev/ui/presentations", date)
+    .post(VERIFIER_ENDPONT_URL, date)
     .then((response) => {
       console.log("responseUrl:", response.data);
       // 後続Get wallet response実行のためにpresentation_idを取得
@@ -144,7 +144,7 @@ router.get("/poll", (req, res) => {
   }
 
   axios
-    .get(VERIFIER_ENDPONT_URL + presentationId)
+    .get(VERIFIER_ENDPONT_URL + "/" + presentationId)
     .then(async (response) => {
       // asyncを追加
 
@@ -212,6 +212,7 @@ router.get(WALLET_RESPONSE_PATH, (req, res) => {
   axios
     .get(
       VERIFIER_ENDPONT_URL +
+        "/" +
         presentationId +
         "?response_code=" +
         req.query.response_code,
