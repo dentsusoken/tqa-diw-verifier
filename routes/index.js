@@ -197,6 +197,7 @@ router.get("/presentations", (req, res) => {
 
 // GET Get wallet response passing response_code
 router.get(WALLET_RESPONSE_PATH, (req, res) => {
+  const deviceType = getDeviceType(req);
   axios
     .get(
       VERIFIER_ENDPONT_URL +
@@ -244,7 +245,10 @@ router.get(WALLET_RESPONSE_PATH, (req, res) => {
         }
         console.log(presentedClaims);
         // VP提示結果を渡す
-        res.render("presentations", { response: presentedClaims });
+        res.render("presentations", {
+          response: presentedClaims,
+          deviceType: deviceType,
+        });
       } catch (error) {
         console.error("CBORデコード中にエラーが発生しました:", error);
         res.status(500).json({ error: "Internal Server Error" });
