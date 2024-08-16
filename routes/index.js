@@ -35,7 +35,6 @@ const getDeviceType = (req) => {
 router.get("/", (req, res) => {
   // デバイス判別
   const deviceType = getDeviceType(req);
-  console.log("deviceType:", deviceType);
   res.locals.verifier_frontend_url = VERIFIER_FRONTEND_URL;
   res.render("index");
 });
@@ -43,7 +42,6 @@ router.get("/", (req, res) => {
 // GET /initiate：VP要求ボタンを押下後
 router.get("/initiate", (req, res) => {
   const deviceType = getDeviceType(req);
-  console.log("deviceType:", deviceType);
   const date = {
     type: "vp_token",
     presentation_definition: {
@@ -81,31 +79,25 @@ router.get("/initiate", (req, res) => {
       VERIFIER_FRONTEND_URL +
       WALLET_RESPONSE_PATH +
       "?response_code={RESPONSE_CODE}";
-    console.log("【ADD】wallet_response_redirect_uri_template:", date);
   }
 
   axios
     .post(VERIFIER_ENDPONT_URL, date)
     .then((response) => {
-      console.log("responseUrl:", response.data);
       // 後続Get wallet response実行のためにpresentation_idを取得
       presentationId = response.data.presentation_id;
-      console.log("presentationId:", presentationId);
 
       // request_uriを取得
       const requestUri = response.data.request_uri;
-      console.log("requestUri", requestUri);
 
       // request_uriをエンコード
       const encodedURI = encodeURIComponent(requestUri);
-      console.log("encodedURI:", encodedURI);
 
       // openid4vp~のURLを生成
       const url =
         CUSTOM_URL_SCHEME +
         "verifier-backend.eudiw.dev?client_id=verifier-backend.eudiw.dev&request_uri=" +
         encodedURI;
-      console.log("url:", url);
 
       if (deviceType === "Desktop") {
         // verifiable画面のQRコードを生成する
@@ -114,7 +106,6 @@ router.get("/initiate", (req, res) => {
           if (err) {
             console.log("error:", err);
           }
-          console.log("qrCodeDataURL:", qrCodeDataURL);
           // リンクとQRコードを渡す
           res.render("verifiable", {
             qrCodeDataURL: qrCodeDataURL,
@@ -185,7 +176,6 @@ router.get("/poll", (req, res) => {
         }
         // VP提示結果をセッションに保存
         req.session.presentedClaims = presentedClaims;
-        console.log("presentedClaims", req.session.presentedClaims);
         return res.json({ result: true });
       } catch (error) {
         console.error("CBORデコード中にエラーが発生しました:", error);
@@ -207,8 +197,6 @@ router.get("/presentations", (req, res) => {
 
 // GET Get wallet response passing response_code
 router.get(WALLET_RESPONSE_PATH, (req, res) => {
-  // response_codeをログに出力
-  console.log(req.query);
   axios
     .get(
       VERIFIER_ENDPONT_URL +

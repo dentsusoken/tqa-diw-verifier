@@ -34,9 +34,7 @@ block content
             fetch(url)                                                                   // ポーリング用のエンドポイントを呼び出す
               .then(response => response.json())
               .then(data => {                                                            // /pollエンドポイントからのレスポンスを処理
-                console.log('Polling result:', data);
                 if (data.result) {
-                  console.log('Polling Successful');
                   document.querySelector('.qr-code').style.display = 'none';             // QRコードを非表示にする
                   window.location.href = '/presentations';                               // /presentationsエンドポイントにリダイレクト
                 } else {
