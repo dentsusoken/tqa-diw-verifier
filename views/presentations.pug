@@ -9,7 +9,9 @@ block content
             p Response from the server: 
               ul.response-content
                 each res in response
-                    li #{res.id} : #{res.claim}
+                    li 
+                      .id #{res.id}
+                      .claim #{res.claim}
           else
             p No response from the server
         .footer
