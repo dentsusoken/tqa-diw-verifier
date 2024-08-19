@@ -1,3 +1,57 @@
-# 開発者向けのリンク集
+# Verifire-Frontend
+Verifire-Frontendは、ユーザーの資格情報の確認を行うためにバックエンドの認証サービスと連携します。
 
-[Gitの利用方法とCIのセットアップガイド](https://esq365.sharepoint.com/sites/isid-scm/SitePages/%E3%82%BD%E3%83%95%E3%83%88%E3%82%A6%E3%82%A7%E3%82%A2%E9%96%8B%E7%99%BA%E3%82%92%E5%88%9D%E3%82%81%E3%82%8B%E5%89%8D%E3%81%AB.aspx)
+## バージョン情報
+
+| 言語・フレームワーク | バージョン  |
+|------------|------------------|
+| Node.js    | 20.16.0   |
+| Express    | 4.19.2   |
+その他パッケージのバージョンはpackage.jsonを参照してください。
+
+## ディレクトリ情報
+```bash
+>tree -a -I "node_modules|.git" -L 2 
+.
+├── .gitignore
+├── README.md
+├── app.js
+├── bin
+│   └── www
+├── eslint.config.js
+├── package-lock.json
+├── package.json
+├── public
+│   └── stylesheets
+├── routes
+│   └── index.js
+└── views
+    ├── error.pug
+    ├── index.pug
+    ├── layout.pug
+    ├── presentations.pug
+    └── verifiable.pug
+
+6 directories, 13 files
+```
+
+## インストール方法
+1. リポジトリのクローン
+```bash
+git clone https://github.com/dentsusoken/tqa-diw-verifier.git
+```
+
+2. ディレクトリの変更
+```bash
+cd project
+```
+3. 依存パッケージをインストール
+
+```bash
+npm install
+```
+4. サーバー起動
+```bash
+npm run start 
+```
+5. ブラウザで`http://localhost:3000`にアクセスして動作確認
