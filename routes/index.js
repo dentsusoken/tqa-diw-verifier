@@ -45,25 +45,25 @@ router.get("/initiate", (req, res) => {
   const date = {
     type: "vp_token",
     presentation_definition: {
-      id: "32f54163-7166-48f1-93d8-ff217bdb0653",
+      id: "a8684fab-bd9f-47f4-9798-72514215d83a",
       input_descriptors: [
         {
-          id: "eu.europa.ec.eudi.pid.1",
-          name: "EUDI PID",
-          purpose: "We need to verify your identity",
+          id: "org.iso.18013.5.1.mDL",
+          name: "Mobile Driving Licence",
+          purpose: "We need to verify your mobile driving licence",
           format: {
             mso_mdoc: {
-              alg: ["ES256", "ES384", "ES512", "EdDSA"],
+              alg: ["ES256", "ES384", "ES512"],
             },
           },
           constraints: {
             fields: [
               {
-                path: ["$['eu.europa.ec.eudi.pid.1']['family_name']"],
+                path: ["$['org.iso.18013.5.1']['document_number']"],
                 intent_to_retain: false,
               },
               {
-                path: ["$['eu.europa.ec.eudi.pid.1']['given_name']"],
+                path: ["$['org.iso.18013.5.1']['given_name']"],
                 intent_to_retain: false,
               },
             ],
@@ -163,7 +163,7 @@ router.get("/poll", (req, res) => {
         const obj = await decodeFirstPromise(decodedVpToken);
         for (const document of obj.documents) {
           const taggedArray =
-            document.issuerSigned.nameSpaces["eu.europa.ec.eudi.pid.1"];
+            document.issuerSigned.nameSpaces["org.iso.18013.5.1"];
           for (const tagged of taggedArray) {
             const decodedObj = await decodeFirstPromise(tagged.value);
             const elementValue = decodedObj.elementValue;
@@ -232,7 +232,7 @@ router.get(WALLET_RESPONSE_PATH, (req, res) => {
         const obj = await decodeFirstPromise(decodedVpToken);
         for (const document of obj.documents) {
           const taggedArray =
-            document.issuerSigned.nameSpaces["eu.europa.ec.eudi.pid.1"];
+            document.issuerSigned.nameSpaces["org.iso.18013.5.1"];
           for (const tagged of taggedArray) {
             const decodedObj = await decodeFirstPromise(tagged.value);
             const elementValue = decodedObj.elementValue;
@@ -261,3 +261,4 @@ router.get(WALLET_RESPONSE_PATH, (req, res) => {
 });
 
 module.exports = router;
+
