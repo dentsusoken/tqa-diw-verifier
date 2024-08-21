@@ -8,7 +8,7 @@ const { v4: uuid } = require("uuid");
 const VERIFIER_FRONTEND_URL = "http://localhost:3000";
 const WALLET_RESPONSE_PATH = "/get-wallet-code";
 const VERIFIER_ENDPONT_URL =
-  "https://verifier-backend.eudiw.dev/ui/presentations";
+  "https://oid4vc-verifier-endpoint-hono.g-trustedweb.workers.dev/ui/presentations";
 const CUSTOM_URL_SCHEME = "openid4vp://";
 
 // デバイスの種類を判別する関数
@@ -96,7 +96,7 @@ router.get("/initiate", (req, res) => {
       // openid4vp~のURLを生成
       const url =
         CUSTOM_URL_SCHEME +
-        "verifier-backend.eudiw.dev?client_id=verifier-backend.eudiw.dev&request_uri=" +
+        "oid4vc-verifier-endpoint-hono.g-trustedweb.workers.dev?client_id=Verifier&request_uri=" +
         encodedURI;
 
       if (deviceType === "Desktop") {
